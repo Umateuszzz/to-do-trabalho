@@ -1,69 +1,45 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Save } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Plus } from "lucide-react";
 
 interface TodoFormProps {
   onAddTodo: (titulo: string, descricao: string) => void;
-  onEditTodo?: (id: string, titulo: string, descricao: string) => void;
-  editTodo?: { id: string; titulo: string; descricao: string } | null;
-  className?: string;
 }
 
-export const TodoForm = ({ onAddTodo, onEditTodo, editTodo, className = "" }: TodoFormProps) => {
+export const TodoForm = ({ onAddTodo }: TodoFormProps) => {
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
-
-  useEffect(() => {
-    if (editTodo) {
-      setTitulo(editTodo.titulo);
-      setDescricao(editTodo.descricao || "");
-      setIsOpen(true);
-    }
-  }, [editTodo]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!titulo.trim()) return;
+    if (!titulo.trim() || isSubmitting) return;
 
-    if (editTodo && onEditTodo) {
-      onEditTodo(editTodo.id, titulo, descricao);
-    } else {
-      onAddTodo(titulo, descricao);
-    }
-
+    setIsSubmitting(true);
+    onAddTodo(titulo, descricao);
     setTitulo("");
     setDescricao("");
-    setIsOpen(false);
-  };
-
-  const handleClose = () => {
-    setIsOpen(false);
-    setTitulo("");
-    setDescricao("");
+    setIsSubmitting(false);
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogTrigger asChild>
-        <Button className={`bg-blue-600 text-white hover:bg-blue-700 ${className}`}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nova Tarefa
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>
-            {editTodo ? "Editar Tarefa" : "Nova Tarefa"}
-          </DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+    <Card className="w-full max-w-2xl">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-lg">Nova Tarefa</CardTitle>
+            <CardDescription>Adicione uma nova tarefa à sua lista</CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="titulo">Título</Label>
             <Input
@@ -72,7 +48,7 @@ export const TodoForm = ({ onAddTodo, onEditTodo, editTodo, className = "" }: To
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
               required
-              autoFocus
+              disabled={isSubmitting}
             />
           </div>
           <div className="space-y-2">
@@ -84,19 +60,21 @@ export const TodoForm = ({ onAddTodo, onEditTodo, editTodo, className = "" }: To
               onChange={(e) => setDescricao(e.target.value)}
               rows={3}
               className="resize-none"
+              disabled={isSubmitting}
             />
           </div>
-          <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={handleClose}>
-              Cancelar
-            </Button>
-            <Button type="submit" className="bg-blue-600 text-white hover:bg-blue-700">
-              <Save className="h-4 w-4 mr-2" />
-              {editTodo ? "Salvar" : "Adicionar"}
+          <div className="flex justify-end">
+            <Button
+              type="submit"
+              className="bg-blue-600 text-white hover:bg-blue-700"
+              disabled={isSubmitting || !titulo.trim()}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              {isSubmitting ? "Adicionando..." : "Adicionar Tarefa"}
             </Button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+      </CardContent>
+    </Card>
   );
 };

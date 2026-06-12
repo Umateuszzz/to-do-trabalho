@@ -2,123 +2,61 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { TodoForm } from "@/components/TodoForm";
 import { TodoList } from "@/components/TodoList";
-import { LogOut, CheckSquare, Clock, Calendar } from "lucide-react";
+import { CheckSquare } from "lucide-react";
 
-const Home = () => {
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
-  const [todos, setTodos] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [editTodo, setEditTodo] = useState<{ id: string; titulo: string; descricao: string } | null>(null);
+interface Todo {
+  id: string;
+  titulo: string;
+  descricao: string;
+  concluida: boolean;
+  created_at: string;
+}
+
+export default function Home() {
+  const { user, loading } = useAuth();
+  const [todos, setTodos] = useState<Todo[]>([]);
+
+  const fetchTodos = async () => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from("todos")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+    if (!error && data) setTodos(data);
+  };
 
   useEffect(() => {
-    if (!user) {
-      navigate("/login");
-      return;
-    }
-
-    const fetchTodos = async () => {
-      const { data, error } = await supabase
-        .from("todos")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error("Error fetching todos:", error);
-      } else {
-        setTodos(data || []);
-      }
-      setLoading(false);
-    };
-
-    fetchTodos();
-
-    const channel = supabase
-      .channel("todos-changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "todos", filter: `user_id=eq.${user.id}` },
-        () => {
-          fetchTodos();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, navigate]);
+    if (user) fetchTodos();
+  }, [user]);
 
   const handleAddTodo = async (titulo: string, descricao: string) => {
-    const { error } = await supabase.from("todos").insert([
-      { titulo, descricao, user_id: user.id },
-    ]);
-
-    if (error) {
-      console.error("Error adding todo:", error);
-    }
-  };
-
-  const handleToggleTodo = async (id: string, concluida: boolean) => {
+    if (!user) return;
     const { error } = await supabase
       .from("todos")
-      .update({ concluida: !concluida })
-      .eq("id", id);
-
-    if (error) {
-      console.error("Error toggling todo:", error);
-    }
+      .insert({ titulo, descricao, user_id: user.id, concluida: false });
+    if (!error) fetchTodos();
   };
-
-  const handleEditTodo = async (id: string, titulo: string, descricao: string) => {
-    const { error } = await supabase
-      .from("todos")
-      .update({ titulo, descricao })
-      .eq("id", id);
-
-    if (error) {
-      console.error("Error editing todo:", error);
-    }
-  };
-
-  const handleDeleteTodo = async (id: string) => {
-    const { error } = await supabase.from("todos").delete().eq("id", id);
-
-    if (error) {
-      console.error("Error deleting todo:", error);
-    }
-  };
-
-  const handleEditClick = (todo: { id: string; titulo: string; descricao: string }) => {
-    setEditTodo(todo);
-  };
-
-  const handleLogout = async () => {
-    await signOut();
-    navigate("/login");
-  };
-
-  const totalTodos = todos.length;
-  const completedTodos = todos.filter((t) => t.concluida).length;
-  const pendingTodos = totalTodos - completedTodos;
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Carregando...</p>
-        </div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
+
+  if (!user) {
+    return <div className="min-h-screen flex items-center justify-center">Redirecionando...</div>;
+  }
+
+  const totalTodos = todos.length;
+  const completedTodos = todos.filter((t) => t.concluida).length;
+  const pendingTodos = totalTodos - completedTodos;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -128,26 +66,13 @@ const Home = () => {
             <CheckSquare className="h-6 w-6 text-blue-600" />
             <h1 className="text-2xl font-bold text-gray-800">Meu To Do</h1>
           </div>
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-600 hidden sm:block">
-              {user?.email}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
-              className="text-gray-600 hover:text-gray-800"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Sair
-            </Button>
-          </div>
+          <span className="text-sm text-gray-600 hidden sm:block">{user.email}</span>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto p-4">
         <div className="mb-6">
-          <Card className="bg-white">
+          <Card>
             <CardHeader>
               <CardTitle className="text-lg">Estatísticas</CardTitle>
             </CardHeader>
@@ -169,7 +94,9 @@ const Home = () => {
                 </div>
                 <div className="text-center p-4 bg-yellow-50 rounded-lg">
                   <div className="flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-full mx-auto mb-2">
-                    <Clock className="h-6 w-6 text-yellow-600" />
+                    <svg className="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                   </div>
                   <p className="text-2xl font-bold text-yellow-800">{pendingTodos}</p>
                   <p className="text-sm text-yellow-600">Pendentes</p>
@@ -180,24 +107,13 @@ const Home = () => {
         </div>
 
         <div className="mb-6">
-          <TodoForm
-            onAddTodo={handleAddTodo}
-            onEditTodo={handleEditTodo}
-            editTodo={editTodo}
-          />
+          <TodoForm onAddTodo={handleAddTodo} />
         </div>
 
         <div>
-          <TodoList
-            todos={todos}
-            onToggleTodo={handleToggleTodo}
-            onEditTodo={handleEditClick}
-            onDeleteTodo={handleDeleteTodo}
-          />
+          <TodoList todos={todos} />
         </div>
       </main>
     </div>
   );
-};
-
-export default Home;
+}
