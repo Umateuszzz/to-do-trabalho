@@ -1,1 +1,79 @@
-"use client"; import { useState } from "react"; import { useNavigate } from "react-router-dom"; import { supabase } from "@/lib/supabase"; import { Card, CardHeader, CardTitle, CardContent, Input, Button } from "@/components/ui"; const Login = () => { const navigate = useNavigate(); const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [error, setError] = useState(""); const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); setError(""); try { const { data, error: supabaseError } = await supabase.auth.signInWithPassword({ email, password }); if (supabaseError) throw supabaseError; navigate("/home"); } catch (err) { setError("Login falhou, tente novamente."); } }; return ( <div className="min-h-screen flex items-center justify-center p-4"> <div className="max-w-md w-full space-y-6 text-center"> <Card className="shadow-lg"> <CardHeader> <CardTitle className="text-2xl">Entrar</CardTitle> </CardHeader> <CardContent> <form onSubmit={handleSubmit}> <div className="space-y-4"> <Input id="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full" /> <Input id="password" type="password" placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full" /> <Button type="submit" className="w-full bg-blue-600 text-white hover:bg-blue-700">Entrar</Button> {error && <p className="text-red-600">{error}</p>} </form> </CardContent> </Card> </div> </div> ); }; export default Login;
+"use client";
+
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card";
+
+const Login = () => {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    try {
+      const { data, error: supabaseError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (supabaseError) throw supabaseError;
+      navigate("/home");
+    } catch (err) {
+      setError("Login falhou, tente novamente.");
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="max-w-md w-full space-y-6 text-center">
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-2xl">Entrar</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit}>
+              <div className="space-y-4">
+                <Input
+                  id="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full"
+                />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Senha"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full"
+                />
+                <Button
+                  type="submit"
+                  className="w-full bg-blue-600 text-white hover:bg-blue-700"
+                >
+                  Entrar
+                </Button>
+                {error && <p className="text-red-600">{error}</p>}
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default Login;
