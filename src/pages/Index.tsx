@@ -1,29 +1,32 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CheckSquare } from "lucide-react";
 
-const Index = () => {
+export default function Index() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full space-y-6 text-center">
-        <h1 className="text-4xl font-bold text-slate-800">Bem-vindo</h1>
-        <p className="text-slate-600">Projeto web com React e shadcn/ui</p>
-        <Card className="shadow-lg border-0">
-          <CardHeader>
-            <CardTitle className="text-2xl">🚀 App Pronto</CardTitle>
-            <CardDescription>
-              Clique nos botões para explorar
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Button className="w-full">Começar</Button>
-            <Button variant="outline" className="w-full">Saiba Mais</Button>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+    <main className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-8">
+      <Card className="w-full max-w-lg">
+        <CardHeader className="text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-blue-100">
+            <CheckSquare className="h-7 w-7 text-blue-600" />
+          </div>
+          <CardTitle className="text-3xl">Meu To Do</CardTitle>
+          <CardDescription>
+            Organize suas tarefas com segurança, autenticação e sincronização no Supabase.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Button asChild className="w-full bg-blue-600 text-white hover:bg-blue-700">
+            <Link to="/login">Entrar</Link>
+          </Button>
+          <Button asChild variant="outline" className="w-full">
+            <Link to="/register">Criar conta</Link>
+          </Button>
+        </CardContent>
+      </Card>
+    </main>
   );
-};
-
-export default Index;
+}
