@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { TodoForm } from "@/components/TodoForm";
 import { TodoList } from "@/components/TodoList";
 import { CheckSquare } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface Todo {
   id: string;
@@ -66,7 +67,13 @@ export default function Home() {
             <CheckSquare className="h-6 w-6 text-blue-600" />
             <h1 className="text-2xl font-bold text-gray-800">Meu To Do</h1>
           </div>
-          <span className="text-sm text-gray-600 hidden sm:block">{user.email}</span>
+          <div className="flex items-center space-x-2">
+            <Link
+              to="/nova-tarefa"
+              className="text-sm text-blue-600 hover:underline flex items-center"
+            >
+              <span className="mr-1">📝 </span>Nova Tarefa            </Link>
+          </div>
         </div>
       </header>
 

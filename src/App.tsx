@@ -11,7 +11,10 @@ import Index from "@/pages/Index";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Home from "@/pages/Home";
+import NovaTarefa from "@/pages/NovaTarefa";
 import NotFound from "@/pages/NotFound";
+
+import { QueryClient } from "@tanstack/react-query";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +37,7 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route path="/nova-tarefa" element={<NovaTarefa />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
