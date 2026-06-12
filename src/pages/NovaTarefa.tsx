@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,12 +20,11 @@ interface Todo {
 
 export default function NovaTarefa() {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string>("");
-
-  const { user, loading } = useAuth();
 
   if (loading) {
     return <div className="flex h-screen items-center justify-center">Carregando...</div>;
@@ -36,6 +36,7 @@ export default function NovaTarefa() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!titulo.trim()) {
       setError("O título é obrigatório.");
       return;
@@ -45,9 +46,19 @@ export default function NovaTarefa() {
     setError("");
 
     try {
-      const { error } = await supabase        .from("todos")
-        .insert({ titulo, descricao, user_id: user.id, concluida: false });
-      if (error) throw error;
+      const { error } = await supabase
+        .from("todos")
+        .insert({
+          titulo,
+          descricao,
+          user_id: user.id,
+          concluida: false,
+        });
+
+      if (error) {
+        throw error;
+      }
+
       navigate("/home");
     } catch (err: any) {
       setError(err.message || "Erro ao salvar tarefa.");
@@ -69,6 +80,7 @@ export default function NovaTarefa() {
               {error}
             </div>
           )}
+
           <form onSubmit={handleSave} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="titulo">Título</Label>
@@ -78,9 +90,10 @@ export default function NovaTarefa() {
                 value={titulo}
                 onChange={(e) => setTitulo(e.target.value)}
                 required
-                className="w-full px-3 py-2 border rounded"
+                disabled={isSubmitting}
               />
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="descricao">Descrição</Label>
               <Textarea
@@ -89,21 +102,26 @@ export default function NovaTarefa() {
                 value={descricao}
                 onChange={(e) => setDescricao(e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border rounded"
+                disabled={isSubmitting}
+                className="resize-none"
               />
             </div>
-            <div className="flex justify-end">
+
+            <div className="flex flex-col sm:flex-row gap-2 justify-end">
               <Button
                 type="button"
-                className="mr-2 text-sm"
+                variant="outline"
                 onClick={() => navigate("/home")}
+                disabled={isSubmitting}
+                className="w-full sm:w-auto"
               >
                 Cancelar
               </Button>
+
               <Button
                 type="submit"
-                className="bg-blue-600 text-white hover:bg-blue-700"
                 disabled={isSubmitting || !titulo.trim()}
+                className="w-full sm:w-auto"
               >
                 {isSubmitting ? "Salvando..." : "Salvar"}
               </Button>

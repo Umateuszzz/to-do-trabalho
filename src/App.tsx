@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import { AuthProvider } from "@/context/AuthContext";
@@ -35,7 +35,14 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route path="/nova-tarefa" element={<NovaTarefa />} />
+            <Route
+              path="/nova-tarefa"
+              element={
+                <ProtectedRoute>
+                  <NovaTarefa />
+                </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
