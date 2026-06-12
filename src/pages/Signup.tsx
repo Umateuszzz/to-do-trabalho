@@ -10,27 +10,37 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 
-const Signup = () => {
+export default function Signup() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSuccess("");
+
+    if (password !== confirmPassword) {
+      setError("As senhas não coincidem");
+      return;
+    }
+
     try {
       const { data, error: supabaseError } = await supabase.auth.signUp({
         email,
         password,
       });
       if (supabaseError) throw supabaseError;
-      setError("Verificação de email enviada, por favor confirme.");
-      navigate("/login");
+      setSuccess("Verificação de email enviada, por favor confirme.");
+      setTimeout(() => navigate("/login"), 3000);
     } catch (err) {
       setError("Erro ao cadastrar: " + (err instanceof Error ? err.message : "Unknown"));
     }
@@ -72,6 +82,18 @@ const Signup = () => {
                     className="w-full"
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className="w-full"
+                  />
+                </div>
                 <Button
                   type="submit"
                   className="w-full bg-green-600 text-white hover:bg-green-700"
@@ -79,6 +101,7 @@ const Signup = () => {
                   Cadastrar
                 </Button>
                 {error && <p className="text-red-600">{error}</p>}
+                {success && <p className="text-green-600">{success}</p>}
               </div>
             </form>
           </CardContent>
@@ -86,6 +109,4 @@ const Signup = () => {
       </div>
     </div>
   );
-};
-
-export default Signup;
+}
