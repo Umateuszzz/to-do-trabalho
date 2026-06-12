@@ -1,43 +1,69 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Plus, Save } from "lucide-react";
 
 interface TodoFormProps {
   onAddTodo: (titulo: string, descricao: string) => void;
+  onEditTodo?: (id: string, titulo: string, descricao: string) => void;
+  editTodo?: { id: string; titulo: string; descricao: string } | null;
   className?: string;
 }
 
-export const TodoForm = ({ onAddTodo, className = "" }: TodoFormProps) => {
+export const TodoForm = ({ onAddTodo, onEditTodo, editTodo, className = "" }: TodoFormProps) => {
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    if (editTodo) {
+      setTitulo(editTodo.titulo);
+      setDescricao(editTodo.descricao || "");
+      setIsOpen(true);
+    }
+  }, [editTodo]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!titulo.trim()) return;
 
-    setIsLoading(true);
-    try {
+    if (editTodo && onEditTodo) {
+      onEditTodo(editTodo.id, titulo, descricao);
+    } else {
       onAddTodo(titulo, descricao);
-      setTitulo("");
-      setDescricao("");
-    } finally {
-      setIsLoading(false);
     }
+
+    setTitulo("");
+    setDescricao("");
+    setIsOpen(false);
+  };
+
+  const handleClose = () => {
+    setIsOpen(false);
+    setTitulo("");
+    setDescricao("");
   };
 
   return (
-    <Card className={className}>
-      <CardHeader>
-        <CardTitle className="text-xl">Nova Tarefa</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <form onSubmit={handleSubmit}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogTrigger asChild>
+        <Button className={`bg-blue-600 text-white hover:bg-blue-700 ${className}`}>
+          <Plus className="h-4 w-4 mr-2" />
+          Nova Tarefa
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>
+            {editTodo ? "Editar Tarefa" : "Nova Tarefa"}
+          </DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
             <Label htmlFor="titulo">Título</Label>
             <Input
@@ -46,8 +72,7 @@ export const TodoForm = ({ onAddTodo, className = "" }: TodoFormProps) => {
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
               required
-              disabled={isLoading}
-              className="w-full"
+              autoFocus
             />
           </div>
           <div className="space-y-2">
@@ -58,19 +83,20 @@ export const TodoForm = ({ onAddTodo, className = "" }: TodoFormProps) => {
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
               rows={3}
-              disabled={isLoading}
-              className="w-full"
+              className="resize-none"
             />
           </div>
-          <Button
-            type="submit"
-            className="w-full bg-blue-600 text-white hover:bg-blue-700"
-            disabled={isLoading || !titulo.trim()}
-          >
-            {isLoading ? "Adicionando..." : "Adicionar Tarefa"}
-          </Button>
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={handleClose}>
+              Cancelar
+            </Button>
+            <Button type="submit" className="bg-blue-600 text-white hover:bg-blue-700">
+              <Save className="h-4 w-4 mr-2" />
+              {editTodo ? "Salvar" : "Adicionar"}
+            </Button>
+          </div>
         </form>
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
   );
 };
