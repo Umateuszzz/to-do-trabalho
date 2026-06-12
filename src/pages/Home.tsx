@@ -69,10 +69,11 @@ export default function Home() {
           </div>
           <div className="flex items-center space-x-2">
             <Link
-              to="/nova-tarefa"
+              to="/minhas-tarefas"
               className="text-sm text-blue-600 hover:underline flex items-center"
             >
-              <span className="mr-1">📝 </span>Nova Tarefa            </Link>
+              Minhas Tarefas
+            </Link>
           </div>
         </div>
       </header>

@@ -12,6 +12,7 @@ import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Home from "@/pages/Home";
 import NovaTarefa from "@/pages/NovaTarefa";
+import MinhasTarefas from "@/pages/MinhasTarefas";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <NovaTarefa />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/minhas-tarefas"
+              element={
+                <ProtectedRoute>
+                  <MinhasTarefas />
                 </ProtectedRoute>
               }
             />
