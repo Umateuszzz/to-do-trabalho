@@ -2,7 +2,7 @@
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardDescription } from "@/components/ui/card";
 import { Edit, Trash2, Menu } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
@@ -40,7 +40,10 @@ export const TodoCard = ({
           <div className="flex items-center space-x-3">
             <Checkbox
               checked={todo.concluida}
-              onCheckedChange={(checked) => onToggleTodo(todo.id, checked as boolean)}
+              onCheckedChange={(checked) => {
+                console.log("Checkbox changed:", todo.id, checked);
+                onToggleTodo(todo.id, checked as boolean);
+              }}
               className="h-4 w-4"
             />
             <div className="flex-1">
