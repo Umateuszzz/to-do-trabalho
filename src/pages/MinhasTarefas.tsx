@@ -21,27 +21,61 @@ export default function MinhasTarefas() {
   const [todos, setTodos] = useState<Todo[]>([]);
 
   useEffect(() => {
-    if (user) fetchTodos();
+    if (user) {
+      fetchTodos();
+    }
   }, [user]);
 
   const fetchTodos = async () => {
+    if (!user) return;
+    
     const { data, error } = await supabase
       .from("todos")
       .select("*")
-      .eq("user_id", user!.id)
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
-    if (!error && data) setTodos(data);
+    if (error) {
+      console.log("Erro ao buscar tarefas:", error);
+      return;
+    }
+
+    if (data) {
+      setTodos(data);
+    }
   };
 
   const handleStatusChange = async (id: string, newStatus: boolean) => {
-    if (!user) return;
-    const { error } = await supabase
-      .from("todos")
-      .update({ concluida: newStatus })
-      .eq("id", id)
-      .eq("user_id", user.id);
-    if (!error) fetchTodos();
+    console.log("handleStatusChange chamado");
+    console.log("ID:", id);
+    console.log("Novo status:", newStatus);
+    console.log("Usuário:", user?.id);
+
+    if (!user) {
+      console.log("Usuário não autenticado");
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("todos")
+        .update({ concluida: newStatus })
+        .eq("id", id)
+        .eq("user_id", user.id)
+        .select();
+
+      console.log("Resultado da atualização:", data);
+      
+      if (error) {
+        console.log("Erro no Supabase:", error);
+        return;
+      }
+
+      // Atualiza a lista após sucesso
+      await fetchTodos();
+    } catch (err) {
+      console.log("Erro inesperado:", err);
+    }
   };
 
   if (loading) {
@@ -120,7 +154,7 @@ export default function MinhasTarefas() {
                   </div>
                   <button
                     onClick={() => handleStatusChange(todo.id, !todo.concluida)}
-                    className="flex items-center gap-1 text-sm text-blue-600 hover:underline"
+                    className="flex items-center gap-1 text-sm text-blue-600 hover:underline font-medium"
                   >
                     {todo.concluida ? "Reabrir" : "Concluir"}
                     <RefreshCw className="h-3 w-3" />

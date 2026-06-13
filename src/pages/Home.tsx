@@ -3,11 +3,10 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TodoForm } from "@/components/TodoForm";
 import { TodoList } from "@/components/TodoList";
-import { CheckSquare, ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
+import { CheckSquare, Link } from "lucide-react";
 
 interface Todo {
   id: string;
@@ -44,13 +43,36 @@ export default function Home() {
   };
 
   const handleStatusChange = async (id: string, newStatus: boolean) => {
-    if (!user) return;
-    const { error } = await supabase
-      .from("todos")
-      .update({ concluida: newStatus })
-      .eq("id", id)
-      .eq("user_id", user.id);
-    if (!error) fetchTodos();
+    console.log("handleStatusChange chamado");
+    console.log("ID:", id);
+    console.log("Novo status:", newStatus);
+    console.log("Usuário:", user?.id);
+
+    if (!user) {
+      console.log("Usuário não autenticado");
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("todos")
+        .update({ concluida: newStatus })
+        .eq("id", id)
+        .eq("user_id", user.id)
+        .select();
+
+      console.log("Resultado da atualização:", data);
+      
+      if (error) {
+        console.log("Erro no Supabase:", error);
+        return;
+      }
+
+      // Atualiza a lista após sucesso
+      await fetchTodos();
+    } catch (err) {
+      console.log("Erro inesperado:", err);
+    }
   };
 
   if (loading) {
@@ -77,14 +99,12 @@ export default function Home() {
             <CheckSquare className="h-6 w-6 text-blue-600" />
             <h1 className="text-2xl font-bold text-gray-800">Meu To Do</h1>
           </div>
-          <div className="flex items-center space-x-2">
-            <Link
-              to="/minhas-tarefas"
-              className="text-sm text-blue-600 hover:underline flex items-center"
-            >
-              Minhas Tarefas
-            </Link>
-          </div>
+          <Link
+            to="/minhas-tarefas"
+            className="text-sm text-blue-600 hover:underline flex items-center"
+          >
+            Minhas Tarefas
+          </Link>
         </div>
       </header>
 

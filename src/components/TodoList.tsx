@@ -1,8 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { CheckSquare, Calendar, RefreshCw } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { Calendar, RefreshCw } from "lucide-react";
 
 interface Todo {
   id: string;
@@ -18,19 +17,25 @@ interface TodoListProps {
 }
 
 export const TodoList = ({ todos, onStatusChange }: TodoListProps) => {
+  const handleToggle = async (todo: Todo) => {
+    console.log("Tarefa clicada:", todo.id);
+    console.log("Status atual:", todo.concluida);
+    console.log("Novo status:", !todo.concluida);
+    await onStatusChange(todo.id, !todo.concluida);
+  };
+
   if (todos.length === 0) {
     return (
       <div className="text-center py-12">
-        <CheckSquare className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+        <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h5.5a2 2 0 002-2V9a2 2 0 00-2-2H9z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5a2 2 0 012-2h2a2 2 0 012 2v2H9V5z" />
+        </svg>
         <p className="text-gray-500 text-lg">Nenhuma tarefa encontrada</p>
         <p className="text-gray-400 text-sm mt-2">Adicione sua primeira tarefa acima para começar!</p>
       </div>
     );
   }
-
-  const handleToggle = async (todo: Todo) => {
-    await onStatusChange(todo.id, !todo.concluida);
-  };
 
   return (
     <div className="space-y-3">
@@ -70,7 +75,7 @@ export const TodoList = ({ todos, onStatusChange }: TodoListProps) => {
             </div>
             <button
               onClick={() => handleToggle(todo)}
-              className="flex items-center gap-1 text-sm text-blue-600 hover:underline"
+              className="flex items-center gap-1 text-sm text-blue-600 hover:underline font-medium"
             >
               {todo.concluida ? "Reabrir" : "Concluir"}
               <RefreshCw className="h-3 w-3" />
