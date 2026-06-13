@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { TodoForm } from "@/components/TodoForm";
 import { TodoList } from "@/components/TodoList";
-import { CheckSquare } from "lucide-react";
+import { CheckSquare, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface Todo {
@@ -40,6 +40,16 @@ export default function Home() {
     const { error } = await supabase
       .from("todos")
       .insert({ titulo, descricao, user_id: user.id, concluida: false });
+    if (!error) fetchTodos();
+  };
+
+  const handleStatusChange = async (id: string, newStatus: boolean) => {
+    if (!user) return;
+    const { error } = await supabase
+      .from("todos")
+      .update({ concluida: newStatus })
+      .eq("id", id)
+      .eq("user_id", user.id);
     if (!error) fetchTodos();
   };
 
@@ -119,7 +129,7 @@ export default function Home() {
         </div>
 
         <div>
-          <TodoList todos={todos} />
+          <TodoList todos={todos} onStatusChange={handleStatusChange} />
         </div>
       </main>
     </div>

@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckSquare, Calendar, ArrowLeft } from "lucide-react";
+import { CheckSquare, Calendar, ArrowLeft, RefreshCw } from "lucide-react";
 
 interface Todo {
   id: string;
@@ -21,9 +21,7 @@ export default function MinhasTarefas() {
   const [todos, setTodos] = useState<Todo[]>([]);
 
   useEffect(() => {
-    if (user) {
-      fetchTodos();
-    }
+    if (user) fetchTodos();
   }, [user]);
 
   const fetchTodos = async () => {
@@ -33,9 +31,17 @@ export default function MinhasTarefas() {
       .eq("user_id", user!.id)
       .order("created_at", { ascending: false });
 
-    if (!error && data) {
-      setTodos(data);
-    }
+    if (!error && data) setTodos(data);
+  };
+
+  const handleStatusChange = async (id: string, newStatus: boolean) => {
+    if (!user) return;
+    const { error } = await supabase
+      .from("todos")
+      .update({ concluida: newStatus })
+      .eq("id", id)
+      .eq("user_id", user.id);
+    if (!error) fetchTodos();
   };
 
   if (loading) {
@@ -83,7 +89,9 @@ export default function MinhasTarefas() {
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <CardTitle className="text-lg">{todo.titulo}</CardTitle>
+                      <CardTitle className={todo.concluida ? "line-through text-gray-500 text-lg" : "font-medium text-lg"}>
+                        {todo.titulo}
+                      </CardTitle>
                       {todo.descricao && (
                         <CardDescription className="mt-1 text-sm text-gray-500">
                           {todo.descricao}
@@ -101,15 +109,22 @@ export default function MinhasTarefas() {
                     </span>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex items-center text-xs text-gray-400">
-                    <Calendar className="h-3 w-3 mr-1" />
-                    Criado em: {new Date(todo.created_at).toLocaleDateString("pt-BR", {
+                <CardContent className="flex items-center justify-between text-xs text-gray-400">
+                  <div>
+                    <Calendar className="h-3 w-3 mr-1 inline" />
+                    {new Date(todo.created_at).toLocaleDateString("pt-BR", {
                       day: "2-digit",
                       month: "2-digit",
                       year: "numeric",
                     })}
                   </div>
+                  <button
+                    onClick={() => handleStatusChange(todo.id, !todo.concluida)}
+                    className="flex items-center gap-1 text-sm text-blue-600 hover:underline"
+                  >
+                    {todo.concluida ? "Reabrir" : "Concluir"}
+                    <RefreshCw className="h-3 w-3" />
+                  </button>
                 </CardContent>
               </Card>
             ))}
