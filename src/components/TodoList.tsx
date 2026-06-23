@@ -2,6 +2,9 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Calendar, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Edit, Trash2, MoreVertical2 } from "lucide-react";
 
 interface Todo {
   id: string;
@@ -14,9 +17,11 @@ interface Todo {
 interface TodoListProps {
   todos: Todo[];
   onStatusChange: (id: string, newStatus: boolean) => Promise<void>;
+  onEditTodo: (id: string, titulo: string, descricao: string) => void;
+  onDeleteTodo: (id: string) => void;
 }
 
-export const TodoList = ({ todos, onStatusChange }: TodoListProps) => {
+export const TodoList = ({ todos, onStatusChange, onEditTodo, onDeleteTodo }: TodoListProps) => {
   const handleToggle = async (todo: Todo) => {
     console.log("Tarefa clicada:", todo.id);
     console.log("Status atual:", todo.concluida);
@@ -81,6 +86,25 @@ export const TodoList = ({ todos, onStatusChange }: TodoListProps) => {
               <RefreshCw className="h-3 w-3" />
             </button>
           </CardContent>
+
+          {/* Editar / Excluir dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="p-1 h-6 w-6">
+                <MoreVertical2 className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => onEditTodo(todo.id, todo.titulo, todo.descricao)} className="flex items-center">
+                <Edit className="h-4 w-4 mr-2" />
+                Editar
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onDeleteTodo(todo.id)} className="flex items-center">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Excluir
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </Card>
       ))}
     </div>

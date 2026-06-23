@@ -7,6 +7,19 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { TodoForm } from "@/components/TodoForm";
 import { TodoList } from "@/components/TodoList";
 import { CheckSquare, Link } from "lucide-react";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogActions,
+  DialogButton,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 interface Todo {
   id: string;
@@ -19,6 +32,11 @@ interface Todo {
 export default function Home() {
   const { user, loading } = useAuth();
   const [todos, setTodos] = useState<Todo[]>([]);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchTodos = async () => {
     if (!user) return;
@@ -72,6 +90,67 @@ export default function Home() {
       await fetchTodos();
     } catch (err) {
       console.log("Erro inesperado:", err);
+    }
+  };
+
+  const handleEditTodo = (id: string, titulo: string, descricao: string) => {
+    const todo = todos.find(t => t.id === id);
+    if (todo) {
+      setEditingTodo(todo);
+      setEditTitle(titulo);
+      setEditDesc(descricao);
+      setIsEditOpen(true);
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingTodo || !user) return;
+    setIsEditOpen(false);
+    try {
+      const { error } = await supabase
+        .from("todos")
+        .update({ titulo: editTitle, descricao: editDesc })
+        .eq("id", editingTodo.id)
+        .eq("user_id", user.id)
+        .select();
+
+      if (error) {
+        console.log("Erro ao editar:", error);
+        alert("Erro ao editar tarefa");
+      } else {
+        await fetchTodos();
+      }
+    } catch (err) {
+      console.log("Erro inesperado ao editar:", err);
+      alert("Erro ao editar");
+    }
+  };
+
+  const handleDeleteTodo = async (id: string) => {
+    if (!user) return;
+    
+    const confirmed = window.confirm("Tem certeza que deseja excluir esta tarefa?");
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("todos")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", user.id);
+
+      if (error) {
+        console.log("Erro ao excluir:", error);
+        alert("Erro ao excluir tarefa");
+      } else {
+        await fetchTodos();
+      }
+    } catch (err) {
+      console.log("Erro inesperado ao excluir:", err);
+      alert("Erro ao excluir");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -149,9 +228,55 @@ export default function Home() {
         </div>
 
         <div>
-          <TodoList todos={todos} onStatusChange={handleStatusChange} />
+          <TodoList 
+            todos={todos} 
+            onStatusChange={handleStatusChange} 
+            onEditTodo={handleEditTodo}
+            onDeleteTodo={handleDeleteTodo}
+          />
         </div>
       </main>
+
+      {/* Modal de Edição */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Tarefa</DialogTitle>
+            <DialogDescription>
+              Altere o título e a descrição da tarefa.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-titulo">Título</Label>
+              <Input
+                id="edit-titulo"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                placeholder="Digite o título da tarefa"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-descricao">Descrição</Label>
+              <Textarea
+                id="edit-descricao"
+                value={editDesc}
+                onChange={(e) => setEditDesc(e.target.value)}
+                placeholder="Descreva a tarefa"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogActions>
+            <DialogButton variant="outline" onClick={() => setIsEditOpen(false)}>
+              Cancelar
+            </DialogButton>
+            <DialogButton onClick={handleSaveEdit}>
+              Salvar Alterações
+            </DialogButton>
+          </DialogActions>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
