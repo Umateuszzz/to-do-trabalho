@@ -69,6 +69,7 @@ export default function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
+                autoComplete="off"
               />
             </div>
             <div className="space-y-2">
@@ -81,6 +82,7 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={isLoading}
+                autoComplete="current-password"
               />
             </div>
             {error && (
@@ -88,7 +90,7 @@ export default function Login() {
             )}
             <Button
               type="submit"
-              className="w-full"
+              className="w-full bg-blue-600 text-white hover:bg-blue-700"
               disabled={isLoading || !email || !password}
             >
               {isLoading ? "Entrando..." : "Entrar"}

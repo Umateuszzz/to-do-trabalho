@@ -49,6 +49,7 @@ export const TodoForm = ({ onAddTodo }: TodoFormProps) => {
               onChange={(e) => setTitulo(e.target.value)}
               required
               disabled={isSubmitting}
+              autoComplete="off"
             />
           </div>
           <div className="space-y-2">

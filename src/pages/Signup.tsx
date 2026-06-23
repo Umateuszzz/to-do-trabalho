@@ -22,6 +22,7 @@ export default function Signup() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,6 +44,8 @@ export default function Signup() {
       setTimeout(() => navigate("/login"), 3000);
     } catch (err) {
       setError("Erro ao cadastrar: " + (err instanceof Error ? err.message : "Unknown"));
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -68,6 +71,7 @@ export default function Signup() {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     className="w-full"
+                    autoComplete="off"
                   />
                 </div>
                 <div className="space-y-2">
@@ -80,6 +84,7 @@ export default function Signup() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     className="w-full"
+                    autoComplete="off"
                   />
                 </div>
                 <div className="space-y-2">
@@ -92,6 +97,7 @@ export default function Signup() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     className="w-full"
+                    autoComplete="off"
                   />
                 </div>
                 <Button
