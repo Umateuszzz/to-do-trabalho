@@ -7,9 +7,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -44,11 +42,12 @@ const Home = () => {
   const [editTitle, setEditTitle] = useState('');
   const [editDesc, setEditDesc] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
-  const [error, setError] = useState<string>('');
-  const [success, setSuccess] = useState<string>('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const fetchTodos = async () => {
     if (!user) return;
+
     const { data, error: supabaseError } = await supabase
       .from('todos')
       .select('*')
@@ -59,7 +58,8 @@ const Home = () => {
       console.error('Erro ao buscar tarefas:', supabaseError);
       return;
     }
-    setTodos(data);
+
+    setTodos(data || []);
   };
 
   useEffect(() => {
@@ -68,6 +68,7 @@ const Home = () => {
 
   const handleAddTodo = async (titulo: string, descricao: string) => {
     if (!user) return;
+
     const { error } = await supabase
       .from('todos')
       .insert({ titulo, descricao, user_id: user.id, concluida: false });
@@ -85,18 +86,20 @@ const Home = () => {
 
   const handleStatusChange = async (id: string, newStatus: boolean) => {
     if (!user) return;
+
     try {
       const { error } = await supabase
         .from('todos')
         .update({ concluida: newStatus })
         .eq('id', id)
-        .eq('user_id', user.id)
-        .select();
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
       setTodos(prev =>
-        prev.map(t => (t.id === id ? { ...t, concluida: newStatus } : t)),
+        prev.map(t =>
+          t.id === id ? { ...t, concluida: newStatus } : t
+        )
       );
     } catch {
       setError('Erro ao atualizar a tarefa. Tente novamente.');
@@ -113,15 +116,25 @@ const Home = () => {
     }
   };
 
+  // ✅ CONFIRMAÇÃO ANTES DE SALVAR EDIÇÃO
   const handleSaveEdit = async () => {
     if (!editingTodo || !user) return;
+
+    const confirmEdit = window.confirm(
+      'Deseja salvar as alterações desta tarefa?'
+    );
+
+    if (!confirmEdit) return;
+
     try {
       const { error } = await supabase
         .from('todos')
-        .update({ titulo: editTitle, descricao: editDesc })
+        .update({
+          titulo: editTitle,
+          descricao: editDesc,
+        })
         .eq('id', editingTodo.id)
-        .eq('user_id', user.id)
-        .select();
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
@@ -129,10 +142,12 @@ const Home = () => {
         prev.map(t =>
           t.id === editingTodo.id
             ? { ...t, titulo: editTitle, descricao: editDesc }
-            : t,
-        ),
+            : t
+        )
       );
+
       setSuccess('Tarefa atualizada com sucesso!');
+
       setTimeout(() => {
         setSuccess('');
         setIsEditOpen(false);
@@ -142,9 +157,18 @@ const Home = () => {
     }
   };
 
+  // ✅ CONFIRMAÇÃO ANTES DE EXCLUIR
   const handleDeleteTodo = async (id: string) => {
     if (!user) return;
+
+    const confirmDelete = window.confirm(
+      'Tem certeza que deseja excluir esta tarefa? Essa ação não pode ser desfeita.'
+    );
+
+    if (!confirmDelete) return;
+
     setIsDeleting(true);
+
     try {
       const { error } = await supabase
         .from('todos')
@@ -156,10 +180,8 @@ const Home = () => {
 
       await fetchTodos();
       setSuccess('Tarefa excluída com sucesso!');
-      setTimeout(() => {
-        setSuccess('');
-        setIsDeleting(false);
-      }, 2000);
+
+      setTimeout(() => setSuccess(''), 2000);
     } catch {
       setError('Erro ao excluir a tarefa. Tente novamente.');
     } finally {
@@ -169,8 +191,8 @@ const Home = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
       </div>
     );
   }
@@ -188,14 +210,9 @@ const Home = () => {
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-3">
-            <div className="flex items-center w-12 h-12 bg-blue-100 rounded-full">
-              <CheckSquare className="h-6 w-6 text-blue-600" />
-            </div>
+            <CheckSquare className="h-6 w-6 text-blue-600" />
             <h1 className="text-2xl font-bold text-gray-800">Meu To Do</h1>
-            <Link
-              to="/minhas-tarefas"
-              className="text-sm text-blue-600 hover:underline flex items-center"
-            >
+            <Link to="/minhas-tarefas" className="text-sm text-blue-600 hover:underline">
               Minhas Tarefas
             </Link>
           </div>
@@ -203,58 +220,19 @@ const Home = () => {
       </header>
 
       <main className="max-w-4xl mx-auto p-4">
-        {/* Estatísticas */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-lg">Estatísticas</CardTitle>
+            <CardTitle>Estatísticas</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mx-auto mb-2">
-                  <CheckSquare className="h-6 w-6 text-blue-600" />
-                </div>
-                <p className="text-2xl font-bold text-blue-800">{todos.length}</p>
-                <p className="text-sm text-blue-600">Total</p>
-              </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mx-auto mb-2">
-                  <CheckSquare className="h-6 w-6 text-green-600" />
-                </div>
-                <p className="text-2xl font-bold text-green-800">
-                  {todos.filter(t => t.concluida).length}
-                </p>
-                <p className="text-sm text-green-600">Concluídas</p>
-              </div>
-              <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                <div className="flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-full mx-auto mb-2">
-                  <svg
-                    className="h-6 w-6 text-yellow-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                </div>
-                <p className="text-2xl font-bold text-yellow-800">
-                  {todos.length - todos.filter(t => t.concluida).length}
-                </p>
-                <p className="text-sm text-yellow-600">Pendentes</p>
-              </div>
-            </div>
+            <p>Total: {todos.length}</p>
+            <p>Concluídas: {todos.filter(t => t.concluida).length}</p>
+            <p>Pendentes: {todos.filter(t => !t.concluida).length}</p>
           </CardContent>
         </Card>
 
-        {/* Formulário de nova tarefa */}
         <TodoForm onAddTodo={handleAddTodo} className="mb-6" />
 
-        {/* Lista de tarefas */}
         <TodoList
           todos={todos}
           onStatusChange={handleStatusChange}
@@ -263,7 +241,7 @@ const Home = () => {
         />
       </main>
 
-      {/* Modal de edição */}
+      {/* MODAL DE EDIÇÃO */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent>
           <DialogHeader>
@@ -272,42 +250,43 @@ const Home = () => {
               Altere o título e a descrição da tarefa.
             </DialogDescription>
           </DialogHeader>
+
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-titulo">Título</Label>
+            <div>
+              <Label>Título</Label>
               <Input
-                id="edit-titulo"
                 value={editTitle}
                 onChange={e => setEditTitle(e.target.value)}
-                placeholder="Digite o título da tarefa"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-descricao">Descrição</Label>
+
+            <div>
+              <Label>Descrição</Label>
               <Textarea
-                id="edit-descricao"
                 value={editDesc}
                 onChange={e => setEditDesc(e.target.value)}
-                placeholder="Descreva a tarefa"
-                rows={3}
               />
             </div>
           </div>
+
           <DialogActions>
             <DialogButton variant="outline" onClick={() => setIsEditOpen(false)}>
               Cancelar
             </DialogButton>
-            <DialogButton onClick={handleSaveEdit}>Salvar Alterações</DialogButton>
+            <DialogButton onClick={handleSaveEdit}>
+              Salvar
+            </DialogButton>
           </DialogActions>
         </DialogContent>
       </Dialog>
 
-      {/* Mensagens de feedback */}
+      {/* FEEDBACK */}
       {error && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-red-100 text-red-800 px-4 py-2 rounded">
           {error}
         </div>
       )}
+
       {success && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-green-100 text-green-800 px-4 py-2 rounded">
           {success}
