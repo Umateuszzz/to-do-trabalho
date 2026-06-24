@@ -1,1 +1,320 @@
-import { useState } from 'react'; import { useNavigate } from 'react-router-dom'; import { useAuth } from '@/context/AuthContext'; import { supabase } from '@/lib/supabase'; import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"; import { Button } from "@/components/ui/button"; import { Input } from "@/components/ui/input"; import { Textarea } from "@/components/ui/textarea"; import { Label } from "@/components/ui/label"; import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogActions, DialogButton } from "@/components/ui/dialog"; import { TodoCard } from "@/components/TodoCard"; import { TodoList } from "@/components/TodoList"; import { TodoForm } from "@/components/TodoForm";  const Home = () => { const navigate = useNavigate(); const { user, loading } = useAuth(); const [todos, setTodos] = useState<Todo[]>([]); const [isEditOpen, setIsEditOpen] = useState(false); const [editingTodo, setEditingTodo] = useState<Todo | null>(null); const [editTitle, setEditTitle] = useState(""); const [editDesc, setEditDesc] = useState(""); const [isDeleting, setIsDeleting] = useState(false); const [error, setError] = useState<string>(''); const [success, setSuccess] = useState<string>('');  const fetchTodos = async () => { if (!user) return; const { data, error: supabaseError } = await supabase .from("todos") .select("*") .eq("user_id", user.id) .order("created_at", { ascending: false }); if (supabaseError) { console.error("Erro ao buscar tarefas:", supabaseError); return; } setTodos(data); };  useEffect(() => { if (user) fetchTodos(); }, [user]);  const handleAddTodo = async (titulo: string, descricao: string) => { if (!user) return; const { error } = await supabase .from("todos") .insert({ titulo, descricao, user_id: user.id, concluida: false }); if (error) { setError("Erro ao salvar tarefa. Tente novamente."); } else { setSuccess("Tarefa adicionada com sucesso!"); setTimeout(() => { setSuccess(''); navigate('/home'); }, 2000); } };  const handleStatusChange = async (id: string, newStatus: boolean) => { if (!user) return; try { const { data, error } = await supabase .from("todos") .update({ concluida: newStatus }) .eq("id", id) .eq("user_id", user.id) .select(); if (error) { throw error; } setTodos(prev => prev.map(t => t.id === id ? { ...t, concluida: newStatus } : t)); } catch (err) { console.error("Erro ao atualizar status:", err); setError("Erro ao atualizar a tarefa. Tente novamente."); } };  const handleEditTodo = (id: string, titulo: string, descricao: string) => { const todo = todos.find(t => t.id === id); if (todo) { setEditingTodo(todo); setEditTitle(titulo); setEditDesc(descricao); setIsEditOpen(true); } };  const handleSaveEdit = async () => { if (!editingTodo || !user) return; try { const { error } = await supabase .from("todos") .update({ titulo: editTitle, descricao: editDesc }) .eq("id", editingTodo.id) .eq("user_id", user.id) .select(); if (error) { throw error; } setTodos(prev => prev.map(t => t.id === editingTodo.id ? { ...t, titulo: editTitle, descricao: editDesc } : t)); setSuccess("Tarefa atualizada com sucesso!"); setTimeout(() => { setSuccess(''); setIsEditOpen(false); }, 2000); } catch (err) { console.error("Erro ao editar tarefa:", err); setError("Erro ao atualizar a tarefa. Tente novamente."); } };  const handleDeleteTodo = async (id: string) => { if (!user) return; const confirmed = window.confirm("Tem certeza que deseja excluir esta tarefa? Esta ação não poderá ser desfeita."); if (!confirmed) return; setIsDeleting(true); try { const { error } = await supabase .from("todos") .delete() .eq("id", id) .eq("user_id", user.id); if (error) { throw error; } await fetchTodos(); setSuccess("Tarefa excluída com sucesso!"); setTimeout(() => { setSuccess(''); setIsDeleting(false); }, 2000); } catch (err) { console.error("Erro ao excluir tarefa:", err); setError("Erro ao excluir a tarefa. Tente novamente."); } finally { setIsDeleting(false); } };  if (loading) { return ( <div className="min-h-screen flex items-center justify-center bg-gray-50"> <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div> </div> ); } if (!user) { return <div className="flex h-screen items-center justify-center"> <div className="text-center"> <p className="text-2xl font-bold">Redirecionando...</p> </div> </div>; } return ( <div className="min-h-screen bg-gray-50 py-8 px-4"> <header className="bg-white shadow-sm border-b"> <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center"> <div className="flex items-center space-x-3"> <div className="flex items-center space-x-3"> <div className="flex items-center w-12 h-12 bg-blue-100 rounded-full mx-auto mb-2"> <CheckSquare className="h-6 w-6 text-blue-600" /> </div> <h1 className="text-2xl font-bold text-gray-800">Meu To Do</h1> </div> <Link to="/minhas-tarefas" className="text-sm text-blue-600 hover:underline flex items-center"> Minhas Tarefas </Link> </div> </div> </header> <main className="max-w-4xl mx-auto p-4"> <div className="mb-6"> <Card> <CardHeader> <CardTitle className="text-lg">Estatísticas</CardTitle> </CardHeader> <CardContent> <div className="grid grid-cols-1 sm:grid-cols-3 gap-4"> <div className="text-center p-4 bg-blue-50 rounded-lg"> <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mx-auto mb-2"> <CheckSquare className="h-6 w-6 text-blue-600" /> </div> <p className="text-2xl font-bold text-blue-800">{todos.length}</p> <p className="text-sm text-blue-600">Total</p> </div> <div className="text-center p-4 bg-green-50 rounded-lg"> <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mx-auto mb-2"> <CheckSquare className="h-6 w-6 text-green-600" /> </div> <p className="text-2xl font-bold text-green-800">{todos.filter((t) => t.concluida).length}</p> <p className="text-sm text-green-600">Concluídas</p> </div> <div className="text-center p-4 bg-yellow-50 rounded-lg"> <div className="flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-full mx-auto mb-2"> <svg className="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /> </div> <p className="text-2xl font-bold text-yellow-800">{todos.length - todos.filter((t) => t.concluida).length}</p> <p className="text-sm text-yellow-600">Pendentes</p> </div> </div> </CardContent> </Card> </div> <div className="mb-6"> <TodoForm onAddTodo={handleAddTodo} /> </div> <div> <TodoList todos={todos} onStatusChange={handleStatusChange} onEditTodo={handleEditTodo} onDeleteTodo={handleDeleteTodo} /> </div> </main> {/* Modal de Edição */} <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}> <DialogContent> <DialogHeader> <DialogTitle>Editar Tarefa</DialogTitle> <DialogDescription> Altere o título e a descrição da tarefa. </DialogDescription> </DialogHeader> <div className="space-y-4"> <div className="space-y-2"> <Label htmlFor="edit-titulo">Título</Label> <Input id="edit-titulo" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="Digite o título da tarefa" /> </div> <div className="space-y-2"> <Label htmlFor="edit-descricao">Descrição</Label> <Textarea id="edit-descricao" value={editDesc} onChange={(e) => setEditDesc(e.target.value)} placeholder="Descreva a tarefa" rows={3} /> </div> </div> <DialogActions> <DialogButton variant="outline" onClick={() => setIsEditOpen(false)}> Cancelar </DialogButton> <DialogButton onClick={handleSaveEdit}> Salvar Alterações </DialogButton> </DialogActions> </DialogContent> </Dialog> </div> ); }; export default Home;
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogActions,
+  DialogButton,
+} from '@/components/ui/dialog';
+import { CheckSquare } from 'lucide-react';
+import { TodoList } from '@/components/TodoList';
+import { TodoForm } from '@/components/TodoForm';
+
+interface Todo {
+  id: string;
+  titulo: string;
+  descricao: string;
+  concluida: boolean;
+  created_at: string;
+}
+
+const Home = () => {
+  const navigate = useNavigate();
+  const { user, loading } = useAuth();
+
+  const [todos, setTodos] = useState<Todo[]>([]);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDesc, setEditDesc] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState<string>('');
+  const [success, setSuccess] = useState<string>('');
+
+  const fetchTodos = async () => {
+    if (!user) return;
+    const { data, error: supabaseError } = await supabase
+      .from('todos')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (supabaseError) {
+      console.error('Erro ao buscar tarefas:', supabaseError);
+      return;
+    }
+    setTodos(data);
+  };
+
+  useEffect(() => {
+    if (user) fetchTodos();
+  }, [user]);
+
+  const handleAddTodo = async (titulo: string, descricao: string) => {
+    if (!user) return;
+    const { error } = await supabase
+      .from('todos')
+      .insert({ titulo, descricao, user_id: user.id, concluida: false });
+
+    if (error) {
+      setError('Erro ao salvar tarefa. Tente novamente.');
+    } else {
+      setSuccess('Tarefa adicionada com sucesso!');
+      setTimeout(() => {
+        setSuccess('');
+        navigate('/home');
+      }, 2000);
+    }
+  };
+
+  const handleStatusChange = async (id: string, newStatus: boolean) => {
+    if (!user) return;
+    try {
+      const { error } = await supabase
+        .from('todos')
+        .update({ concluida: newStatus })
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .select();
+
+      if (error) throw error;
+
+      setTodos(prev =>
+        prev.map(t => (t.id === id ? { ...t, concluida: newStatus } : t)),
+      );
+    } catch {
+      setError('Erro ao atualizar a tarefa. Tente novamente.');
+    }
+  };
+
+  const handleEditTodo = (id: string, titulo: string, descricao: string) => {
+    const todo = todos.find(t => t.id === id);
+    if (todo) {
+      setEditingTodo(todo);
+      setEditTitle(titulo);
+      setEditDesc(descricao);
+      setIsEditOpen(true);
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingTodo || !user) return;
+    try {
+      const { error } = await supabase
+        .from('todos')
+        .update({ titulo: editTitle, descricao: editDesc })
+        .eq('id', editingTodo.id)
+        .eq('user_id', user.id)
+        .select();
+
+      if (error) throw error;
+
+      setTodos(prev =>
+        prev.map(t =>
+          t.id === editingTodo.id
+            ? { ...t, titulo: editTitle, descricao: editDesc }
+            : t,
+        ),
+      );
+      setSuccess('Tarefa atualizada com sucesso!');
+      setTimeout(() => {
+        setSuccess('');
+        setIsEditOpen(false);
+      }, 2000);
+    } catch {
+      setError('Erro ao atualizar a tarefa. Tente novamente.');
+    }
+  };
+
+  const handleDeleteTodo = async (id: string) => {
+    if (!user) return;
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('todos')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      await fetchTodos();
+      setSuccess('Tarefa excluída com sucesso!');
+      setTimeout(() => {
+        setSuccess('');
+        setIsDeleting(false);
+      }, 2000);
+    } catch {
+      setError('Erro ao excluir a tarefa. Tente novamente.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p className="text-2xl font-bold">Redirecionando...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8 px-4">
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center w-12 h-12 bg-blue-100 rounded-full">
+              <CheckSquare className="h-6 w-6 text-blue-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-800">Meu To Do</h1>
+            <Link
+              to="/minhas-tarefas"
+              className="text-sm text-blue-600 hover:underline flex items-center"
+            >
+              Minhas Tarefas
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-4xl mx-auto p-4">
+        {/* Estatísticas */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg">Estatísticas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="text-center p-4 bg-blue-50 rounded-lg">
+                <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mx-auto mb-2">
+                  <CheckSquare className="h-6 w-6 text-blue-600" />
+                </div>
+                <p className="text-2xl font-bold text-blue-800">{todos.length}</p>
+                <p className="text-sm text-blue-600">Total</p>
+              </div>
+              <div className="text-center p-4 bg-green-50 rounded-lg">
+                <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mx-auto mb-2">
+                  <CheckSquare className="h-6 w-6 text-green-600" />
+                </div>
+                <p className="text-2xl font-bold text-green-800">
+                  {todos.filter(t => t.concluida).length}
+                </p>
+                <p className="text-sm text-green-600">Concluídas</p>
+              </div>
+              <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                <div className="flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-full mx-auto mb-2">
+                  <svg
+                    className="h-6 w-6 text-yellow-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <p className="text-2xl font-bold text-yellow-800">
+                  {todos.length - todos.filter(t => t.concluida).length}
+                </p>
+                <p className="text-sm text-yellow-600">Pendentes</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Formulário de nova tarefa */}
+        <TodoForm onAddTodo={handleAddTodo} className="mb-6" />
+
+        {/* Lista de tarefas */}
+        <TodoList
+          todos={todos}
+          onStatusChange={handleStatusChange}
+          onEditTodo={handleEditTodo}
+          onDeleteTodo={handleDeleteTodo}
+        />
+      </main>
+
+      {/* Modal de edição */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Tarefa</DialogTitle>
+            <DialogDescription>
+              Altere o título e a descrição da tarefa.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-titulo">Título</Label>
+              <Input
+                id="edit-titulo"
+                value={editTitle}
+                onChange={e => setEditTitle(e.target.value)}
+                placeholder="Digite o título da tarefa"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-descricao">Descrição</Label>
+              <Textarea
+                id="edit-descricao"
+                value={editDesc}
+                onChange={e => setEditDesc(e.target.value)}
+                placeholder="Descreva a tarefa"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogActions>
+            <DialogButton variant="outline" onClick={() => setIsEditOpen(false)}>
+              Cancelar
+            </DialogButton>
+            <DialogButton onClick={handleSaveEdit}>Salvar Alterações</DialogButton>
+          </DialogActions>
+        </DialogContent>
+      </Dialog>
+
+      {/* Mensagens de feedback */}
+      {error && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-red-100 text-red-800 px-4 py-2 rounded">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-green-100 text-green-800 px-4 py-2 rounded">
+          {success}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Home;
